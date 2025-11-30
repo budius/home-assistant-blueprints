@@ -1,5 +1,5 @@
 blueprint:
-    name: V2 Philips Hue Tap Dial Volume Control
+    name: Philips Hue Tap Dial Volume Control
     description: Uses Zigbee2MQTT connected Tap Dial to control media player volume
     domain: automation
     author: Ronaldo Pace
