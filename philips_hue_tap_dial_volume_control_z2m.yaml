@@ -1,9 +1,10 @@
 blueprint:
-    name: Philips Hue Tap Dial Volume Control
+    name: V2 Philips Hue Tap Dial Volume Control
     description: Uses Zigbee2MQTT connected Tap Dial to control media player volume
     domain: automation
     author: Ronaldo Pace
     input:
+        # The philips hue tap dial device connected to the Zigbee2MQTT
         mqtt_topic:
             name: MQTT Topic
             description: The MQTT topic for the Philips Hue Tap Dial.<br><br>
@@ -13,32 +14,27 @@ blueprint:
                 - the name of the device <br><br>
                 The value can be found on Zigbee2MQTT page for the device under 'MQTT' section.<br>
                 Example 'zigbee2mqtt/Living Room Volume Control'
+        # The media player entity
         target_media_player:
             name: Media Player Entity
-            description: The media player to control the volume<br><br>
-                <b>MUST BE ONE ENTITY</b>, this blueprint will not work with devices, area or multiple entities.<br><br>
-                This seems to be a limitation on HomeAssistant side,<br>
-                but if you know a better work around, PRs are welcome!
+            description: The media player to control the volume
             selector:
-                target:
-                    entity:
-                        -   domain: media_player
+                entity:
+                    domain: media_player
+                    multiple: false
 
-variables:
-    # It seems HA doesn't handle too well a blueprint input as part of condition state
-    # https://community.home-assistant.io/t/blueprint-with-configurable-boolean-input-and-is-state-condition/822914
-    # hence I had to be creative here to make the condition "only change volume while playing" to work correctly.
-    player_hack: !input target_media_player
-
+# triggers everytime a new message arrives at the mqtt
 triggers:
     -   trigger: mqtt
         topic: !input mqtt_topic
 
 conditions:
     # only change volume while playing
-    -   condition: template
-        value_template: "{{ states(player_hack.entity_id) == 'playing' }}"
-    # only process if proper payloads
+    -   condition: state
+        entity_id: !input target_media_player
+        state:
+            - playing
+    # only process the proper mqtt payloads
     -   condition: template
         value_template: >-
             {{ trigger.payload_json.action == 'brightness_step_up' or
@@ -46,10 +42,12 @@ conditions:
 
 actions:
 
+    # computes the volume change proportional to the tap dial step
     -   variables:
             step: "{{ trigger.payload_json.action_step_size / 423.0 }}"
             action: "{{ trigger.payload_json.action }}"
-            volume: "{{ states.media_player.kitchen_speaker_2.attributes.volume_level }}"
+            player_id: !input target_media_player
+            volume: "{{ state_attr(player_id, 'volume_level') }}"
 
     -   choose:
             -   alias: Volume Up
@@ -61,7 +59,8 @@ actions:
                         metadata: { }
                         data:
                             volume_level: "{{ [(volume + step), 1.0]|min }}"
-                        target: !input target_media_player
+                        target:
+                            entity_id: !input target_media_player
 
             -   alias: Volume Down
                 conditions:
@@ -72,6 +71,7 @@ actions:
                         metadata: { }
                         data_template:
                             volume_level: "{{ [(volume - step), 0.0]|max }}"
-                        target: !input target_media_player
+                        target:
+                            entity_id: !input target_media_player
 mode: queued
 max: 20
