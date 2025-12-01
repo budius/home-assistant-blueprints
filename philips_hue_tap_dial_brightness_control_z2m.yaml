@@ -40,8 +40,8 @@ blueprint:
             name: Tap Dial Scaling Factor
             description: This scales the Dial step to brightness percentual changes.<br>
                 After lots of testing, 4.23 should roughly translates 360° to 100% brightness.<br>
-                Smaller values will make it change faster (e.g. 230° = 100% brightness).<br>
-                Bigger values will make it change slower (e.g. 540° = 100% brightness).<br>
+                Smaller values will make it change faster, meaning a smaller rotation does a bigger change.<br>
+                Bigger values will make it change slower, meaning a bigger rotation does a smaller change.
             default: 4.23
             selector:
                 number:
