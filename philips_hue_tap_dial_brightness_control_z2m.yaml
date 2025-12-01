@@ -14,6 +14,7 @@ blueprint:
                 - the name of the device <br><br>
                 The value can be found on Zigbee2MQTT page for the device under 'MQTT' section.<br>
                 Example 'zigbee2mqtt/Living Room Lights'
+
         # The light entity to control
         target_light:
             name: Light Entity
@@ -22,9 +23,10 @@ blueprint:
                 entity:
                     domain: light
                     multiple: false
+
         target_transition:
             name: Light Transition
-            description: Adding a very small transition (probably between 0.2 and 0.5) might give a smoother feeling to the light changes
+            description: Adding a very small transition (something between 0.2 and 0.5) might give a smoother feeling to the light changes
             default: 0
             selector:
                 number:
@@ -33,6 +35,21 @@ blueprint:
                     mode: box
                     min: 0
                     max: 3
+
+        target_scaling:
+            name: Tap Dial Scaling Factor
+            description: This scales the Dial step to brightness percentual changes.<br>
+                After lots of testing, 4.23 should roughly translates 360° to 100% brightness.<br>
+                Smaller values will make it change faster (e.g. 230° = 100% brightness).<br>
+                Bigger values will make it change slower (e.g. 540° = 100% brightness).<br>
+            default: 4.23
+            selector:
+                number:
+                    step: any
+                    unit_of_measurement: seconds
+                    mode: box
+                    min: 0.1
+                    max: 15
 
 # triggers everytime a new message arrives at the mqtt
 triggers:
@@ -51,7 +68,8 @@ actions:
 
     # computes the brightness change proportional to the tap dial step
     -   variables:
-            step: "{{ trigger.payload_json.action_step_size / 4.23 }}"
+            scale: !input target_scaling
+            step: "{{ trigger.payload_json.action_step_size / scale }}"
             action: "{{ trigger.payload_json.action }}"
 
     -   choose:
