@@ -46,7 +46,6 @@ blueprint:
             selector:
                 number:
                     step: any
-                    unit_of_measurement: seconds
                     mode: box
                     min: 0.1
                     max: 15
