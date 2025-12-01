@@ -23,6 +23,20 @@ blueprint:
                     domain: media_player
                     multiple: false
 
+        target_scaling:
+            name: Tap Dial Scaling Factor
+            description: This scales the Dial step to volume percentual change.<br>
+                After lots of testing, 423 should roughly translates 360° to 100% volume.<br>
+                Smaller values will make it change faster, meaning a smaller rotation does a bigger change.<br>
+                Bigger values will make it change slower, meaning a bigger rotation does a smaller change.
+            default: 423
+            selector:
+                number:
+                    step: 1
+                    mode: box
+                    min: 10
+                    max: 1500
+
 # triggers everytime a new message arrives at the mqtt
 triggers:
     -   trigger: mqtt
@@ -44,7 +58,8 @@ actions:
 
     # computes the volume change proportional to the tap dial step
     -   variables:
-            step: "{{ trigger.payload_json.action_step_size / 423.0 }}"
+            scale: !input target_scaling
+            step: "{{ trigger.payload_json.action_step_size / scale }}"
             action: "{{ trigger.payload_json.action }}"
             player_id: !input target_media_player
             volume: "{{ state_attr(player_id, 'volume_level') }}"
