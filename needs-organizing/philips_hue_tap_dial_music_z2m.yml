@@ -1,0 +1,131 @@
+blueprint:
+    name: Philips Hue Tap Music Buttons
+    description: Uses Zigbee2MQTT connected Tap Dial to Play Music
+    domain: automation
+    author: Ronaldo Pace
+    input:
+        # The philips hue tap dial device connected to the Zigbee2MQTT
+        mqtt_topic:
+            name: MQTT Topic
+            description: The MQTT topic for the Philips Hue Tap Dial.<br><br>
+                This is composed by combining:<br>
+                - the MQTT base name (defaults to 'zigbee2mqtt')<br>
+                - the slash '/' symbol <br>
+                - the name of the device <br><br>
+                The value can be found on Zigbee2MQTT page for the device under 'MQTT' section.<br>
+                Example 'zigbee2mqtt/Living Room Volume Control'
+        # The media player entity
+        target_media_player:
+            name: Media Player Entity
+            description: The media player to play music
+            selector:
+                entity:
+                    domain: media_player
+                    multiple: false
+        # Volume to start the player
+        target_initial_volume:
+            name: Media Player Initial Volume
+            description: Volume to set the player when start playing
+            default: 30
+            selector:
+                number:
+                    mode: slider
+                    unit_of_measurement: "%"
+                    min: 0
+                    max: 100
+                    step: 1
+        button_1:
+            name: Button 1 press
+            description: What happens on button 1 press
+            default: [ ]
+            selector:
+                action:
+        button_2:
+            name: Button 2 press
+            description: What happens on button 2 press
+            default: [ ]
+            selector:
+                action:
+        button_3:
+            name: Button 3 press
+            description: What happens on button 3 press
+            default: [ ]
+            selector:
+                action:
+        button_4:
+            name: Button 4 press
+            description: What happens on button 4 press
+            default: [ ]
+            selector:
+                action:
+
+# triggers everytime a new message arrives at the mqtt
+triggers:
+    -   trigger: mqtt
+        topic: !input mqtt_topic
+
+conditions:
+    # only process the proper mqtt payloads
+    -   condition: template
+        value_template: >-
+            {{ trigger.payload_json.action == 'button_1_press' or
+            trigger.payload_json.action == 'button_2_press' or
+            trigger.payload_json.action == 'button_3_press' or
+            trigger.payload_json.action == 'button_4_press' }}
+
+actions:
+    -   if:
+            -   condition: state
+                entity_id: !input target_media_player
+                state:
+                    - playing
+        then:
+            -   action: media_player.media_pause
+                metadata: { }
+                data: { }
+                target:
+                    entity_id: !input target_media_player
+        else:
+            -   variables:
+                    action: "{{ trigger.payload_json.action }}"
+                    volume: !input target_initial_volume
+            -   action: media_player.repeat_set
+                metadata: { }
+                target:
+                    entity_id: !input target_media_player
+                data:
+                    repeat: "off"
+            -   action: media_player.shuffle_set
+                metadata: { }
+                data:
+                    shuffle: true
+                target:
+                    entity_id: !input target_media_player
+            -   action: media_player.volume_set
+                metadata: { }
+                data:
+                    volume_level: "{{ volume / 100.0 }}"
+                target:
+                    entity_id: !input target_media_player
+            -   choose:
+                    -   conditions:
+                            -   condition: template
+                                value_template: "{{ action == 'button_1_press' }}"
+                        sequence: !input button_1
+                        alias: Button 1
+                    -   conditions:
+                            -   condition: template
+                                value_template: "{{ action == 'button_2_press' }}"
+                        sequence: !input button_2
+                        alias: Button 2
+                    -   conditions:
+                            -   condition: template
+                                value_template: "{{ action == 'button_3_press' }}"
+                        sequence: !input button_3
+                        alias: Button 3
+                    -   conditions:
+                            -   condition: template
+                                value_template: "{{ action == 'button_4_press' }}"
+                        sequence: !input button_4
+                        alias: Button 4
+mode: queued
