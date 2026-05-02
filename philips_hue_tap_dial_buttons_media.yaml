@@ -74,6 +74,9 @@ conditions:
             trigger.payload_json.action == 'button_4_press' }}
 
 actions:
+    -   variables:
+            action: "{{ trigger.payload_json.action }}"
+            volume: !input target_initial_volume
     -   if:
             -   condition: state
                 entity_id: !input target_media_player
@@ -119,9 +122,6 @@ actions:
         # Actions when the media player is not playing
         # ############################################
         else:
-            -   variables:
-                    action: "{{ trigger.payload_json.action }}"
-                    volume: !input target_initial_volume
             -   action: media_player.repeat_set
                 metadata: { }
                 target:
